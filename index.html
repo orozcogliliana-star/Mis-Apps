@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Mesa de Ayuda IA</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
@@ -40,6 +40,7 @@
   --radius-sm:        8px;
   --radius-bubble:    20px;
 
+  /* Espaciado — escala en desktop */
   --spacing-xs:       6px;
   --spacing-sm:       10px;
   --spacing-md:       18px;
@@ -47,22 +48,29 @@
 
   --font-main:        'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
   --font-mono:        'Space Mono', monospace;
+
+  /* Ancho máximo del área de chat en desktop */
+  --chat-max:         760px;
 }
 
+/* ===== RESET ===== */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
+/* ===== BODY ===== */
 body {
   font-family: var(--font-main);
   background: var(--bg-gradient);
   background-attachment: fixed;
   color: var(--text-main);
   height: 100vh;
+  height: 100dvh;           /* dynamic viewport height — clave en móvil */
   display: flex;
   flex-direction: column;
   overflow: hidden;
   position: relative;
 }
 
+/* Orbes de fondo */
 body::before, body::after {
   content: '';
   position: fixed;
@@ -95,30 +103,39 @@ header {
   backdrop-filter: blur(18px);
   -webkit-backdrop-filter: blur(18px);
   border-bottom: 1px solid var(--glass-border);
-  padding: var(--spacing-md) var(--spacing-lg);
+  padding: var(--spacing-sm) var(--spacing-md);
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: var(--spacing-sm);
   box-shadow: 0 2px 16px rgba(99, 102, 241, 0.10);
   animation: slideDown 0.5s ease-out both;
+  /* safe-area para notch / isla dinámica */
+  padding-top: max(var(--spacing-sm), env(safe-area-inset-top));
+  padding-left: max(var(--spacing-md), env(safe-area-inset-left));
+  padding-right: max(var(--spacing-md), env(safe-area-inset-right));
 }
 
 header h1 {
-  font-size: 1.25rem;
+  font-size: clamp(0.95rem, 3vw, 1.25rem);
   font-weight: 700;
   color: var(--primary-accent);
   letter-spacing: -0.3px;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
+/* API config — se contrae en pantallas muy pequeñas */
 .api-config {
   display: flex;
   align-items: center;
   gap: var(--spacing-xs);
   background: var(--glass-input-bg);
-  padding: 6px 8px;
+  padding: 5px 7px;
   border-radius: var(--radius-lg);
   border: 1px solid var(--glass-border);
   box-shadow: var(--shadow-input);
+  min-width: 0;             /* permite que flex comprima */
 }
 
 .api-config input[type="password"] {
@@ -126,10 +143,12 @@ header h1 {
   background: transparent;
   outline: none;
   font-family: var(--font-mono);
-  font-size: 0.78rem;
+  font-size: 0.75rem;
   color: var(--text-main);
-  padding: 4px 6px;
-  width: 140px;
+  padding: 4px 5px;
+  /* fluido: 100 px en móvil, 140 px en desktop */
+  width: clamp(90px, 22vw, 140px);
+  min-width: 0;
 }
 .api-config input::placeholder { color: var(--text-muted); }
 
@@ -137,14 +156,16 @@ header h1 {
   background: var(--primary-accent);
   color: var(--text-white);
   border: none;
-  padding: 7px 16px;
+  padding: 6px 12px;
   border-radius: var(--radius-md);
   font-family: var(--font-main);
-  font-size: 0.85rem;
+  font-size: clamp(0.75rem, 2vw, 0.85rem);
   font-weight: 600;
   cursor: pointer;
+  white-space: nowrap;
   transition: transform 0.18s ease, background 0.18s ease, box-shadow 0.18s ease;
   box-shadow: var(--shadow-btn);
+  flex-shrink: 0;
 }
 .api-config button:hover, .btn-primary:hover {
   background: var(--primary-dark);
@@ -156,10 +177,7 @@ header h1 {
   cursor: default;
   box-shadow: 0 4px 14px rgba(22, 163, 74, 0.35);
 }
-.api-config button.connected:hover {
-  background: #16a34a;
-  transform: none;
-}
+.api-config button.connected:hover { background: #16a34a; transform: none; }
 
 /* ===== MAIN / CHAT ===== */
 main {
@@ -167,11 +185,14 @@ main {
   z-index: 5;
   flex: 1;
   overflow-y: auto;
-  padding: var(--spacing-lg);
+  overflow-x: hidden;
+  /* centra el flujo en desktop, llena en móvil */
+  padding: var(--spacing-md) max(var(--spacing-md), calc((100% - var(--chat-max)) / 2));
   display: flex;
   flex-direction: column;
   gap: var(--spacing-md);
   scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
 }
 main::-webkit-scrollbar { width: 5px; }
 main::-webkit-scrollbar-track { background: transparent; }
@@ -182,13 +203,15 @@ main::-webkit-scrollbar-thumb {
 
 /* ===== BURBUJAS ===== */
 .msg {
-  max-width: 78%;
-  padding: 13px 18px;
+  /* más ancho en móvil (espacio escaso), más estrecho en desktop */
+  max-width: min(85%, 580px);
+  padding: 11px 16px;
   border-radius: var(--radius-bubble);
-  font-size: 0.93rem;
+  font-size: clamp(0.85rem, 2.2vw, 0.93rem);
   line-height: 1.55;
   border: 1px solid var(--glass-border);
   animation: bubbleIn 0.35s ease-out both;
+  word-break: break-word;   /* evita desbordamiento con URLs largas */
 }
 .bot {
   align-self: flex-start;
@@ -215,7 +238,7 @@ main::-webkit-scrollbar-thumb {
   display: none;
   align-items: center;
   gap: 5px;
-  padding: 13px 18px;
+  padding: 11px 16px;
   border-radius: var(--radius-bubble);
   border-bottom-left-radius: 4px;
   background: var(--bubble-bot-bg);
@@ -245,27 +268,32 @@ footer {
   backdrop-filter: blur(18px);
   -webkit-backdrop-filter: blur(18px);
   border-top: 1px solid var(--glass-border);
-  padding: var(--spacing-md) var(--spacing-lg);
+  /* mismo padding lateral centrado que el main */
+  padding: var(--spacing-sm) max(var(--spacing-md), calc((100% - var(--chat-max)) / 2));
+  padding-bottom: max(var(--spacing-sm), env(safe-area-inset-bottom));
   display: flex;
   gap: var(--spacing-sm);
   align-items: flex-end;
   box-shadow: 0 -2px 16px rgba(99, 102, 241, 0.08);
 }
+
 footer textarea {
   flex: 1;
-  min-height: 48px;
+  min-height: 44px;
   max-height: 120px;
-  padding: 12px 16px;
+  padding: 10px 14px;
   border: 1px solid var(--glass-border);
   border-radius: var(--radius-lg);
   background: rgba(255, 255, 255, 0.75);
   font-family: var(--font-main);
-  font-size: 0.92rem;
+  font-size: clamp(0.88rem, 2.2vw, 0.92rem);
   color: var(--text-main);
   resize: none;
   outline: none;
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
   box-shadow: var(--shadow-input);
+  /* Evita zoom automático en iOS (mínimo 16 px efectivos) */
+  font-size: max(16px, clamp(0.88rem, 2.2vw, 0.92rem));
 }
 footer textarea:focus {
   border-color: var(--primary-light);
@@ -273,8 +301,9 @@ footer textarea:focus {
 }
 footer textarea::placeholder { color: var(--text-muted); }
 
+/* Botón enviar — tamaño táctil mínimo 44 × 44 px */
 footer button {
-  min-width: 48px; height: 48px;
+  min-width: 44px; height: 44px;
   display: flex; align-items: center; justify-content: center;
   background: var(--primary-accent);
   border: none; border-radius: 50%;
@@ -282,6 +311,7 @@ footer button {
   box-shadow: var(--shadow-btn);
   transition: transform 0.18s ease, background 0.18s ease, box-shadow 0.18s ease;
   flex-shrink: 0;
+  touch-action: manipulation; /* elimina delay de 300 ms en móvil */
 }
 footer button svg { fill: white; width: 20px; height: 20px; transform: translateX(1px); }
 footer button:hover {
@@ -289,6 +319,7 @@ footer button:hover {
   transform: scale(1.08) translateY(-1px);
   box-shadow: 0 6px 20px rgba(99, 102, 241, 0.45);
 }
+footer button:active { transform: scale(0.95); }
 
 /* ===== ANIMACIONES ===== */
 @keyframes slideDown {
@@ -298,6 +329,31 @@ footer button:hover {
 @keyframes bubbleIn {
   from { opacity: 0; transform: translateY(10px) scale(0.97); }
   to   { opacity: 1; transform: translateY(0)  scale(1); }
+}
+
+/* ===== BREAKPOINTS ===== */
+
+/* Tablet / desktop pequeño ≥ 600 px */
+@media (min-width: 600px) {
+  :root {
+    --spacing-md: 20px;
+    --spacing-lg: 28px;
+  }
+  .msg { padding: 13px 18px; }
+  footer textarea { min-height: 48px; }
+  footer button   { min-width: 48px; height: 48px; }
+}
+
+/* Desktop ≥ 900 px: columna centrada */
+@media (min-width: 900px) {
+  :root { --spacing-md: 24px; }
+
+  header {
+    padding-left: max(var(--spacing-lg), calc((100% - var(--chat-max)) / 2));
+    padding-right: max(var(--spacing-lg), calc((100% - var(--chat-max)) / 2));
+  }
+
+  .msg { max-width: min(72%, 560px); }
 }
 </style>
 </head>
@@ -492,6 +548,18 @@ footer button:hover {
   if (textarea) {
     textarea.addEventListener('input',   () => autoResize(textarea));
     textarea.addEventListener('keydown', (e) => handleKey(e));
+  }
+
+  /* -------------------------------------------------------
+     Fix teclado virtual en iOS/Android:
+     cuando el teclado aparece, el viewport se encoge y el
+     footer se queda flotando. Forzamos scroll al final.
+  ------------------------------------------------------- */
+  if ('visualViewport' in window) {
+    window.visualViewport.addEventListener('resize', () => {
+      const chatWindow = document.getElementById('chat-window');
+      chatWindow.scrollTop = chatWindow.scrollHeight;
+    });
   }
 </script>
 
